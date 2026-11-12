@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@color/background">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Biometry"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="@color/primary"
+        android:layout_marginBottom="35dp"/>
+
+    <TextView
+        android:id="@+id/txtResultIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✓"
+        android:textSize="80sp"
+        android:textStyle="bold"
+        android:textColor="@color/success"/>
+
+    <TextView
+        android:id="@+id/txtResultTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tożsamość potwierdzona"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        android:textColor="@color/success"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="12dp"/>
+
+    <TextView
+        android:id="@+id/txtResultDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Wynik przykładowy. Raport EKG został wykorzystany w demonstracji procesu weryfikacji."
+        android:textSize="16sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:layout_marginBottom="35dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Metoda weryfikacji: EKG&#10;Urządzenie: Huawei Watch D2"
+        android:textSize="15sp"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:padding="20dp"
+        android:background="@drawable/card_background"
+        android:layout_marginBottom="30dp"/>
+
+    <Button
+        android:id="@+id/btnHome"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Wróć do strony głównej"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/primary"/>
+
+</LinearLayout>
