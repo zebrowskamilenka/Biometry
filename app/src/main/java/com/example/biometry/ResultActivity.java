@@ -21,21 +21,39 @@ public class ResultActivity extends AppCompatActivity {
         Button btnHome = findViewById(R.id.btnHome);
 
         String mode = getIntent().getStringExtra("mode");
+        boolean success = getIntent().getBooleanExtra("success", false);
+
 
         if ("register".equals(mode)) {
-            txtResultIcon.setText("✓");
+            if(success){
+                txtResultIcon.setText("✓");
             txtResultTitle.setText("Wzorzec EKG zapisany");
             txtResultDescription.setText(
                     "Raport został wybrany jako wzorzec biometryczny. " +
-                            "To demonstracja procesu rejestracji."
-            );
+                            "Został poprawnie zapisany."
+            );}
+            else{
+                txtResultIcon.setText("x");
+                txtResultTitle.setText("Wzorzec EKG nie został zapisany");
+                txtResultDescription.setText(
+                        "Nie udało się wyodrębnić uderzeń serca z pliku PDF. "
+                );
+            }
         } else {
+            if(success){
             txtResultIcon.setText("✓");
             txtResultTitle.setText("Tożsamość potwierdzona");
             txtResultDescription.setText(
                     "Przykładowy wynik weryfikacji na podstawie raportu EKG. " +
-                            "Sygnał nie został rzeczywiście przeanalizowany."
-            );
+                            "Sygnał został poprawnie  zweryfikowany."
+            );}
+            else{
+                txtResultIcon.setText("x");
+                txtResultTitle.setText("Tożsamość nie potwierdzona");
+                txtResultDescription.setText(
+                        "Odmowa dostępu (weryfikacja NEGATYWNA lub brak wzorca) "
+                );
+            }
         }
 
         btnHome.setOnClickListener(v -> {

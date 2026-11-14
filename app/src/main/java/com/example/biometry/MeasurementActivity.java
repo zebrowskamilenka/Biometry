@@ -52,14 +52,7 @@ public class MeasurementActivity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         showSelectedFile(uri);
-
-                        Intent intent = new Intent(
-                                MeasurementActivity.this,
-                                ResultActivity.class
-                        );
-
-                        intent.putExtra("mode", mode);
-                        startActivity(intent);
+                        processPdfAndNavigate(uri, mode);
 
                     }
                 }
@@ -72,6 +65,34 @@ public class MeasurementActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
     }
 
+    private void processPdfAndNavigate(Uri uri, String mode) {
+        // Blokujemy przycisk na czas analizy w Pythonie i informujemy użytkownika
+        btnSelectPdf.setEnabled(false);
+        btnSelectPdf.setText("Przetwarzanie sygnału EKG...");
+
+        new Thread(() -> {
+            boolean success;
+            if ("register".equals(mode)) {
+                success = PdfRead.saveReferenceFromPdf(this, uri);
+            } else {
+                success = PdfRead.verifyFromPdf(this, uri);
+            }
+
+            // Wracamy na wątek główny UI, aby przejść do ResultActivity
+            runOnUiThread(() -> {
+                btnSelectPdf.setEnabled(true);
+                btnSelectPdf.setText("Wybierz inny plik PDF");
+
+                Intent intent = new Intent(
+                        MeasurementActivity.this,
+                        ResultActivity.class
+                );
+                intent.putExtra("mode", mode);
+                intent.putExtra("success", success); // <-- Wynik analizy dla ResultActivity
+                startActivity(intent);
+            });
+        }).start();
+    }
     private void showSelectedFile(Uri uri) {
         String fileName = "Wybrano plik PDF";
 
