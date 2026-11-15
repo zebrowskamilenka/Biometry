@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import androidx.core.content.ContextCompat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,6 +23,11 @@ public class ResultActivity extends AppCompatActivity {
 
         String mode = getIntent().getStringExtra("mode");
         boolean success = getIntent().getBooleanExtra("success", false);
+
+        int resultColor = ContextCompat.getColor(
+                this,
+                success ? R.color.success : R.color.error
+        );
 
 
         if ("register".equals(mode)) {
@@ -55,6 +61,11 @@ public class ResultActivity extends AppCompatActivity {
                 );
             }
         }
+
+        // Ustawienie koloru wyniku weryfikacji
+        txtResultIcon.setTextColor(resultColor);
+        txtResultTitle.setTextColor(resultColor);
+        txtResultDescription.setTextColor(resultColor);
 
         btnHome.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
