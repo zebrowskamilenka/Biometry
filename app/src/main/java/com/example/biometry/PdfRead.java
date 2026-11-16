@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
@@ -19,10 +20,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 public class PdfRead {
+
     private static final String PREFS_NAME = "BiometryPrefs";
     private static final String KEY_TEMPLATE = "ecg_template";
 
-    // Uruchamia Pythona bezpiecznie z dowolnej aktywności
     private static PyObject getEngine(Context context) {
         if (!Python.isStarted()) {
             Python.start(new AndroidPlatform(context.getApplicationContext()));
@@ -30,8 +31,7 @@ public class PdfRead {
         return Python.getInstance().getModule("ecg_engine");
     }
 
-    // Zamienia pierwszą stronę wybranego pliku PDF na obrazek PNG w cache
-    private static String renderPdfPageToPng(Context context, Uri pdfUri, String outputFileName) throws Exception {
+    private static String renderPdfPageToPng(Context context, Uri pdfUri, String prefix) throws Exception {
         ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(pdfUri, "r");
         if (pfd == null) {
             throw new Exception("Nie można otworzyć pliku PDF");
@@ -52,50 +52,65 @@ public class PdfRead {
         renderer.close();
         pfd.close();
 
-        File outFile = new File(context.getCacheDir(), outputFileName);
+
+        File outFile = new File(context.getCacheDir(), prefix + "_" + System.currentTimeMillis() + ".png");
         try (FileOutputStream out = new FileOutputStream(outFile)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
         }
         return outFile.getAbsolutePath();
     }
 
-    // 1. Wywołujesz w aktywności od WZORCA
     public static boolean saveReferenceFromPdf(Context context, Uri pdfUri) {
+        File pngFile = null;
         try {
-            String pngPath = renderPdfPageToPng(context, pdfUri, "reference_ecg.png");
+            String pngPath = renderPdfPageToPng(context, pdfUri, "ref");
+            pngFile = new File(pngPath);
+
             PyObject engine = getEngine(context);
             String resultJsonStr = engine.callAttr("process_reference", pngPath).toString();
+            Log.e("ECG_DEBUG", "REGISTER RESPONSE: " + resultJsonStr);
 
             JSONObject res = new JSONObject(resultJsonStr);
             if ("success".equals(res.getString("status"))) {
                 String templateArrayStr = res.getJSONArray("template").toString();
                 SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                prefs.edit().putString(KEY_TEMPLATE, templateArrayStr).apply();
-                return true;
+                return prefs.edit().putString(KEY_TEMPLATE, templateArrayStr).commit();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("ECG_DEBUG", "REGISTER ERROR", e);
+        } finally {
+            if (pngFile != null && pngFile.exists()) {
+                pngFile.delete();
+            }
         }
         return false;
     }
 
-    // 2. Wywołujesz w aktywności od WERYFIKACJI
     public static boolean verifyFromPdf(Context context, Uri pdfUri) {
+        File pngFile = null;
         try {
             SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
             String savedTemplate = prefs.getString(KEY_TEMPLATE, null);
             if (savedTemplate == null) {
-                return false; // Brak zapisanego wzorca
+                Log.e("ECG_DEBUG", "VERIFY ERROR: Brak zapisanego wzorca w SharedPreferences");
+                return false;
             }
 
-            String pngPath = renderPdfPageToPng(context, pdfUri, "verify_ecg.png");
+            String pngPath = renderPdfPageToPng(context, pdfUri, "ver");
+            pngFile = new File(pngPath);
+
             PyObject engine = getEngine(context);
             String resultJsonStr = engine.callAttr("verify_ecg", pngPath, savedTemplate).toString();
+            Log.e("ECG_DEBUG", "VERIFY RESPONSE: " + resultJsonStr);
 
             JSONObject res = new JSONObject(resultJsonStr);
             return res.optBoolean("match", false);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("ECG_DEBUG", "VERIFY ERROR", e);
+        } finally {
+            if (pngFile != null && pngFile.exists()) {
+                pngFile.delete();
+            }
         }
         return false;
     }
