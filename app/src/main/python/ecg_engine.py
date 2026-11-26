@@ -121,7 +121,7 @@ def process_reference(image_path):
 
     raw_signal, fs, info = res
     beats, peaks_count = _process_beats(raw_signal, fs)
-    if len(beats) < 2:
+    if len(beats) < 1:
         return json.dumps({"status": "error", "message": f"Zbyt mało uderzeń (wykryto={len(beats)}, szczyty R={peaks_count}, {info})"})
 
     # Wybieramy środkowe uderzenie jako wzorzec (najmniej narażone na artefakty brzegowe filtra)

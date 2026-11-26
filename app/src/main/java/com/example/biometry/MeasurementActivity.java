@@ -4,9 +4,15 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.pdf.PdfRenderer;
+import android.os.ParcelFileDescriptor;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -16,6 +22,10 @@ public class MeasurementActivity extends AppCompatActivity {
 
     private TextView txtFileName;
     private Button btnSelectPdf;
+    private ImageView imgPdfPreview;
+    private TextView txtPreviewPlaceholder;
+    private TextView txtAnalysisStatus;
+    private ProgressBar analysisProgress;
 
     private ActivityResultLauncher<String[]> pdfPicker;
 
@@ -30,6 +40,10 @@ public class MeasurementActivity extends AppCompatActivity {
 
         txtFileName = findViewById(R.id.txtFileName);
         btnSelectPdf = findViewById(R.id.btnSelectPdf);
+        imgPdfPreview = findViewById(R.id.imgPdfPreview);
+        txtPreviewPlaceholder = findViewById(R.id.txtPreviewPlaceholder);
+        txtAnalysisStatus = findViewById(R.id.txtAnalysisStatus);
+        analysisProgress = findViewById(R.id.analysisProgress);
 
         String mode = getIntent().getStringExtra("mode");
 
@@ -69,6 +83,11 @@ public class MeasurementActivity extends AppCompatActivity {
         // Blokujemy przycisk na czas analizy w Pythonie i informujemy użytkownika
         btnSelectPdf.setEnabled(false);
         btnSelectPdf.setText("Przetwarzanie sygnału EKG...");
+        analysisProgress.setVisibility(View.VISIBLE);
+
+        txtAnalysisStatus.setText(
+                "Rozpoczynanie analizy EKG..."
+        );
 
         new Thread(() -> {
             boolean success;
@@ -80,15 +99,30 @@ public class MeasurementActivity extends AppCompatActivity {
 
             // Wracamy na wątek główny UI, aby przejść do ResultActivity
             runOnUiThread(() -> {
+
                 btnSelectPdf.setEnabled(true);
                 btnSelectPdf.setText("Wybierz inny plik PDF");
+
+                analysisProgress.setVisibility(View.GONE);
+
+                if (success) {
+                    txtAnalysisStatus.setText(
+                            "Analiza zakończona pomyślnie."
+                    );
+                } else {
+                    txtAnalysisStatus.setText(
+                            "Analiza zakończona. Sprawdź wynik."
+                    );
+                }
 
                 Intent intent = new Intent(
                         MeasurementActivity.this,
                         ResultActivity.class
                 );
+
                 intent.putExtra("mode", mode);
-                intent.putExtra("success", success); // <-- Wynik analizy dla ResultActivity
+                intent.putExtra("success", success);
+
                 startActivity(intent);
             });
         }).start();
@@ -122,5 +156,65 @@ public class MeasurementActivity extends AppCompatActivity {
 
         txtFileName.setText("Wybrany plik: " + fileName);
         btnSelectPdf.setText("Wybierz inny plik PDF");
+        renderPdfPreview(uri);
     }
+
+    private void renderPdfPreview(Uri uri) {
+
+        new Thread(() -> {
+            Bitmap bitmap = null;
+
+            try {
+                ParcelFileDescriptor fileDescriptor =
+                        getContentResolver().openFileDescriptor(uri, "r");
+
+                if (fileDescriptor != null) {
+                    PdfRenderer renderer =
+                            new PdfRenderer(fileDescriptor);
+
+                    if (renderer.getPageCount() > 0) {
+                        PdfRenderer.Page page = renderer.openPage(0);
+
+                        bitmap = Bitmap.createBitmap(
+                                page.getWidth(),
+                                page.getHeight(),
+                                Bitmap.Config.ARGB_8888
+                        );
+
+                        page.render(
+                                bitmap,
+                                null,
+                                null,
+                                PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
+                        );
+
+                        page.close();
+                    }
+
+                    renderer.close();
+                    fileDescriptor.close();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            Bitmap finalBitmap = bitmap;
+
+            runOnUiThread(() -> {
+                if (finalBitmap != null) {
+                    imgPdfPreview.setImageBitmap(finalBitmap);
+                    imgPdfPreview.setVisibility(View.VISIBLE);
+                    txtPreviewPlaceholder.setVisibility(View.GONE);
+                } else {
+                    txtPreviewPlaceholder.setText(
+                            "Nie udało się wyświetlić podglądu PDF"
+                    );
+                    txtPreviewPlaceholder.setVisibility(View.VISIBLE);
+                }
+            });
+
+        }).start();
+    }
+
 }

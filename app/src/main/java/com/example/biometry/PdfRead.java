@@ -65,6 +65,7 @@ public class PdfRead {
             String pngPath = renderPdfPageToPng(context, pdfUri, "reference_ecg.png");
             PyObject engine = getEngine(context);
             String resultJsonStr = engine.callAttr("process_reference", pngPath).toString();
+            android.util.Log.e("ECG_DEBUG", resultJsonStr);
 
             JSONObject res = new JSONObject(resultJsonStr);
             if ("success".equals(res.getString("status"))) {
