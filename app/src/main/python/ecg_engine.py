@@ -200,8 +200,7 @@ def process_reference(image_path):
             "message": f"Zbyt mało uderzeń ({debug_info})"
         })
 
-    beats_arr = np.array(beats)
-    initial_median = np.median(beats_arr, axis=0)
+
 
     dists = [_beat_distance(initial_median, b) for b in beats_arr]
     cutoff = np.percentile(dists, 70)
