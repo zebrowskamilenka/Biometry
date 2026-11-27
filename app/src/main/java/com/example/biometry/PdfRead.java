@@ -68,7 +68,6 @@ public class PdfRead {
 
             PyObject engine = getEngine(context);
             String resultJsonStr = engine.callAttr("process_reference", pngPath).toString();
-            Log.e("ECG_DEBUG", "REGISTER RESPONSE: " + resultJsonStr);
 
             JSONObject res = new JSONObject(resultJsonStr);
             if ("success".equals(res.getString("status"))) {
